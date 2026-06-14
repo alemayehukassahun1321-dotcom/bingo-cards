@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>የአማርኛ ቢንጎ ካርቴላ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #d1c4e9; 
+            margin: 0;
+            padding: 8px;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header-main {
+            text-align: center;
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 480px;
+        }
+        .header-title {
+            color: #4a148c;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .card-info {
+            font-size: 13px;
+            color: #fff;
+            background: #7b1fa2;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            margin-top: 4px;
+        }
+        
+        .live-call-display {
+            background: #ffffff;
+            border: 3px solid #7b1fa2;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            width: 100%;
+            max-width: 480px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .live-call-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .live-call-number {
+            font-size: 38px;
+            color: #d32f2f;
+            font-weight: bold;
+            margin: 2px 0;
+            animation: pulse 1s infinite alternate;
+        }
+        .live-call-history {
+            font-size: 11px;
+            color: #555;
+            border-top: 1px dashed #ccc;
+            padding-top: 4px;
+            margin-top: 4px;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        .game-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            max-width: 480px;
+            width: 100%;
+            background: #f3e5f5;
+            padding: 8px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+        .called-board-side {
+            flex: 0.45;
+            background: #fff;
+            padding: 6px;
+            border-radius: 10px;
+            border: 2px solid #b39ddb;
+        }
+        .board-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #4a148c;
+            text-align: center;
+            margin-bottom: 6px;
+            background: #e1bee7;
+            padding: 2px;
+            border-radius: 4px;
+        }
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+        }
+        .board-cell {
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            padding: 4px 0;
+            color: #777;
+        }
+        .board-cell.letter-header {
+            color: #fff;
+            font-size: 12px;
+        }
+        
+        /* 🎨 የ B I N G O ፊደላት መለያ ቀለማት */
+        .b-head { background: #ffb300 !important; border-color: #ffb300 !important; color: white !important; }
+        .i-head { background: #43a047 !important; border-color: #43a047 !important; color: white !important; }
+        .n-head { background: #1e88e5 !important; border-color: #1e88e5 !important; color: white !important; }
+        .g-head { background: #e53935 !important; border-color: #e53935 !important; color: white !important; }
+        .o-head { background: #8e24aa !important; border-color: #8e24aa !important; color: white !important; }
+        
+        .board-cell.called-active {
+            background: #4caf50 !important;
+            color: white !important;
+            border-color: #388e3c !important;
+            box-shadow: 0 0 5px #4caf50;
+        }
+
+        .board-cell.called-latest {
+            background: #e53935 !important;
+            color: white !important;
+            border-color: #b71c1c !important;
+            box-shadow: 0 0 8px #e53935;
+            animation: blinker 1s linear infinite; 
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0.7; }
+        }
+
+        .player-card-side {
+            flex: 0.55;
+            background: #fff;
+            padding: 6px;
+            border-radius: 10px;
+            border: 2px solid #b39ddb;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .grid-5x5 {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .cell {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+        .cell.header {
+            cursor: default;
+            font-size: 16px;
+        }
+        .cell.free {
+            background: #ffe0b2;
+            color: #e64a19;
+            border-color: #ffb74d;
+            font-size: 10px;
+        }
+        .cell.marked {
+            background: #e53935 !important;
+            color: white !important;
+            border-color: #b71c1c !important;
+            transform: scale(0.96);
+        }
+        .cell.match-hint {
+            background: #fff9c4;
+            border-color: #fbc02d;
+        }
+        
+        .action-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+        .btn-claim {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 0;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 3px 8px rgba(76,175,80,0.3);
+        }
+        .btn-next-call {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 10px 0;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 3px 8px rgba(2,136,209,0.3);
+        }
+        .btn-claim:active, .btn-next-call:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-main">
+        <div class="header-title">የአማርኛ ቢንጎ</div>
+        <div class="card-info" id="card-label">ካርቴላ በመጫን ላይ...</div>
+    </div>
+
+    <div class="live-call-display">
+        <div class="live-call-title">🔊 አሁን የተጠራው ቁጥር</div>
+        <div class="live-call-number" id="live-num">--</div>
+        <div class="live-call-history">⏮️ ያለፉት ቁጥሮች፦ <span id="live-history">የሉም</span></div>
+    </div>
+
+    <div class="game-layout">
+        
+        <div class="called-board-side">
+            <div class="board-title">የሚጠሩ ቁጥሮች</div>
+            <div class="board-grid" id="main-board">
+                <div class="board-cell letter-header b-head">B</div>
+                <div class="board-cell letter-header i-head">I</div>
+                <div class="board-cell letter-header n-head">N</div>
+                <div class="board-cell letter-header g-head">G</div>
+                <div class="board-cell letter-header o-head">O</div>
+            </div>
+        </div>
+
+        <div class="player-card-side">
+            <div class="grid-5x5" id="bingo-grid">
+                <!-- 🎨 የተጫዋቹ ካርቴላ ራስጌዎች በቀለም ደመቁ -->
+                <div class="cell header b-head">B</div>
+                <div class="cell header i-head">I</div>
+                <div class="cell header n-head">N</div>
+                <div class="cell header g-head">G</div>
+                <div class="cell header o-head">O</div>
+            </div>
+
+            <div class="action-buttons-container">
+                <button class="btn-next-call" onclick="triggerNextCall()">🎲 ቀጣይ ጥራ ➡️</button>
+                <button class="btn-claim" onclick="claimBingo()">🏆 ቢንጎ በል!</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); 
+
+        const SERVER_URL = "https://pretext-papaya-vowel.ngrok-free.dev";
+ 
+
+        function getQueryParams() {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(pair => {
+                const parts = pair.split("=");
+                if (parts[0]) params[parts[0]] = decodeURIComponent(parts[1]);
+            });
+            return params;
+        }
+
+        const urlParams = getQueryParams();
+        const cardId = urlParams.id || "0";
+        const gameId = urlParams.game_id || "1"; 
+        document.getElementById('card-label').innerText = `ካርቴላ ቁጥር #${cardId}`;
+
+        let calledNumbers = urlParams.c ? urlParams.c.split(",").map(Number).filter(n => n > 0) : [];
+        const markedNumbers = ["FREE"]; 
+        let matrix = [];
+        let gameInterval = null;
+
+        const mainBoard = document.getElementById('main-board');
+        for (let row = 0; row < 15; row++) {
+            const bNum = row + 1;
+            const iNum = row + 16;
+            const nNum = row + 31;
+            const gNum = row + 46;
+            const oNum = row + 61;
+            
+            [bNum, iNum, nNum, gNum, oNum].forEach(num => {
+                const bCell = document.createElement('div');
+                bCell.classList.add('board-cell');
+                bCell.id = `board-num-${num}`;
+                bCell.innerText = num;
+                mainBoard.appendChild(bCell);
+            });
+        }
+
+        if (urlParams.m) {
+            try {
+                const decodedData = atob(urlParams.m);
+                matrix = JSON.parse(decodedData);
+                renderCard(matrix);
+            } catch (e) {
+                document.getElementById('card-label').innerText = "የመረጃ ስህተት!";
+            }
+        } else {
+            matrix = [
+                [15, 18, 31, 53, 75],
+                [10, 19, 40, 55, 73],
+                [6,  24, "FREE", 56, 65],
+                [1,  21, 39, 58, 66],
+                [5,  29, 42, 57, 68]
+            ];
+            renderCard(matrix);
+        }
+
+        // 🎯 [ፍጹም መፍትሄ] ካርቴላዋ እንዳትጠፋ 25ቱንም ሴሎች በትክክል የመገንቢያ ሎጂክ
+        function renderCard(matrix) {
+            const grid = document.getElementById('bingo-grid');
+            
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const val = matrix[r][c];
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    
+                    if (val === "FREE" || (r === 2 && c === 2)) {
+                        cell.innerText = "FREE";
+                        cell.id = `card-cell-FREE`;
+                        cell.classList.add('free', 'marked'); 
+                    } else {
+                        cell.innerText = val;
+                        cell.id = `card-cell-${val}`; 
+                        
+                        cell.onclick = function() {
+                            const numVal = Number(val);
+                            if (cell.classList.contains('marked')) {
+                                cell.classList.remove('marked');
+                                const index = markedNumbers.indexOf(numVal);
+                                if (index > -1) markedNumbers.splice(index, 1);
+                            } else {
+                                cell.classList.add('marked');
+                                if (!markedNumbers.includes(numVal)) {
+                                    markedNumbers.push(numVal);
+                                }
+                            }
+                        };
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoardColors() {
+            if (calledNumbers.length === 0) {
+                document.getElementById('live-num').innerText = "--";
+                document.getElementById('live-history').innerText = "የሉም";
+                return;
+            }
+
+            const latestNumber = calledNumbers[calledNumbers.length - 1];
+            
+            let letter = "";
+            if (latestNumber >= 1 && latestNumber <= 15) letter = "B-";
+            else if (latestNumber >= 16 && latestNumber <= 30) letter = "I-";
+            else if (latestNumber >= 31 && latestNumber <= 45) letter = "N-";
+            else if (latestNumber >= 46 && latestNumber <= 60) letter = "G-";
+            else if (latestNumber >= 61 && latestNumber <= 75) letter = "O-";
+
+            document.getElementById('live-num').innerText = `${letter}${latestNumber}`;
+
+            const historyArray = calledNumbers.slice(-4, -1).reverse();
+            if (historyArray.length > 0) {
+                document.getElementById('live-history').innerText = historyArray.join(' ➡️ ');
+            } else {
+                document.getElementById('live-history').innerText = "የሉም";
+            }
+
+            for (let i = 1; i <= 75; i++) {
+                const cell = document.getElementById(`board-num-${i}`);
+                if (cell) {
+                    cell.classList.remove('called-active', 'called-latest');
+                    if (calledNumbers.includes(i)) {
+                        if (i === latestNumber) {
+                            cell.classList.add('called-latest'); 
+                        } else {
+                            cell.classList.add('called-active'); 
+                        }
+                    }
+                }
+            }
+
+            matrix.forEach(row => {
+                row.forEach(val => {
+                    if (val !== "FREE") {
+                        const cell = document.getElementById(`card-cell-${val}`);
+                        if (cell) {
+                            if (calledNumbers.includes(Number(val))) {
+                                cell.classList.add('match-hint'); 
+                            } else {
+                                cell.classList.remove('match-hint');
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function checkIncomingNumbers() {
+            fetch(`${SERVER_URL}/get_live_numbers?game_id=${gameId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "game_over") {
+                        clearInterval(gameInterval);
+                        alert(`ጨዋታው በቢንጎ ተዘግቷል! አሸናፊ ካርቴላ፦ #${data.winner}`);
+                        tg.close();
+                    } else if (data.numbers) {
+                        calledNumbers = data.numbers;
+                        updateBoardColors();
+                    }
+                })
+                .catch(err => console.log("የሰርቨር ግንኙነት ችግር..."));
+        }
+
+        function triggerNextCall() {
+            fetch(`${SERVER_URL}/trigger_next_call`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_id: gameId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    checkIncomingNumbers();
+                } else {
+                    console.log("ጥሪ አልተሳካም፦ " + data.reason);
+                }
+            })
+            .catch(err => console.log("የጥሪ መገናኛ መስመር ተቋርጧል..."));
+        }
+
+        window.onload = function() {
+            updateBoardColors();
+            gameInterval = setInterval(checkIncomingNumbers, 2500);
+        };
+
+        function claimBingo() {
+            const user = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "ተጫዋች";
+
+            const dataToBot = {
+                game_id: gameId,
+                card_id: cardId,
+                player_name: user,
+                marked: markedNumbers
+            };
+
+            fetch(`${SERVER_URL}/submit_bingo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToBot)
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.valid === true) {
+                    alert("🎉 እንኳን ደስ አለህ! ቢንጎህ ትክክል ነው!");
+                } else {
+                    alert("❌ ይቅርታ ቢንጎህ ትክክል አይደለም፣ ማርክ ያደረግካቸውን ቁጥሮች ፈትሽ!");
+                }
+                tg.close();
+            })
+            .catch(err => {
+                tg.sendData(JSON.stringify({action: "claim_bingo", ...dataToBot}));
+                tg.close();
+            });
+        }
+    </script>
+</body>
+</html>
